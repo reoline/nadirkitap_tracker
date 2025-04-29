@@ -1,8 +1,8 @@
 name: NadirKitap Fiyat Karşılaştırma
 
 on:
+  # Sabah 08:00 ve akşam 20:00 UTC’de çalışacak
   schedule:
-    # Sabah 08:00 ve akşam 20:00 UTC zaman diliminde (GitHub runner saat dilimine dikkat)
     - cron: '0 8,20 * * *'
   workflow_dispatch:
 
@@ -25,4 +25,5 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run price comparison
-        run: python tracker.py
+        run: |
+          python tracker.py
