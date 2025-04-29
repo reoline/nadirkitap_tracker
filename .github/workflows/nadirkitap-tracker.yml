@@ -1,0 +1,29 @@
+name: NadirKitap Fiyat Karşılaştırma
+
+on:
+  # Her gün TT 09:00 ve 21:00'de çalıştırır (UTC 06:00 ve 18:00)
+  schedule:
+    - cron: '0 6,18 * * *'
+  workflow_dispatch:
+
+jobs:
+  compare-prices:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kodu indir
+        uses: actions/checkout@v4
+
+      - name: Python 3.x ortamını kur
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Kütüphaneleri yükle
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Yeni ilanları tara ve karşılaştır
+        run: |
+          python nadirkitap-takip.py
