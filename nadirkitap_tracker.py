@@ -2,39 +2,30 @@ import requests
 from bs4 import BeautifulSoup
 import datetime
 
-# ——————— Pushcut Webhook URL’iniz ———————
+#  ——————————————————————
+#  Buraya kendi Pushcut Webhook URL'ini tam olarak yapıştırdık:
 PUSHCUT_URL = "https://api.pushcut.io/CLDonSTvi22mteRYjxTdI/notifications/NadirKitap"
-# —————————————————————————————————————————
+#  ——————————————————————
 
-def send_notification(title: str, message: str):
-    """
-    Pushcut’a bildirimi doğru JSON formatında gönderir.
-    title   : Bildirim başlığı (Pushcut panelindeki notification adı)
-    message : Bildirim içeriği
-    """
+def send_notification(title, message):
     payload = {
-        "input": {
-            "text": f"{title}\n{message}"
-        }
+        "title": title,
+        "text": message
     }
     try:
-        r = requests.post(PUSHCUT_URL, json=payload, timeout=10)
-        r.raise_for_status()
-        print(f"✔️ Bildirim gönderildi: {title}")
+        resp = requests.post(PUSHCUT_URL, json=payload, timeout=10)
+        resp.raise_for_status()
     except Exception as e:
-        print(f"❌ Pushcut gönderilemedi: {e}")
+        print(f"Pushcut gönderilemedi: {e}")
 
 def fetch_nadir_ilanlar():
-    """
-    NadirKitap’ta 'antika kitap' + 'imzalı' + 'ilk baskı' filtreli ilanları çeker.
-    """
-    url = (
-      "https://www.nadirkitap.com/kitap-ara.html"
-      "?kelime=antika+kitap"
-      "&kitap_tipi=imzali"
-      "&kitap_tipi=ilk%20baski"
-    )
-    r = requests.get(url, timeout=15)
+    # “antika kitap” + “imzalı” + “ilk baskı” filtreleri
+    url = "https://www.nadirkitap.com/kitap-ara.html"
+    params = {
+        "kelime": "antika kitap",
+        "kitap_tipi": ["imzali", "ilk%20baski"]
+    }
+    r = requests.get(url, params=params, timeout=15)
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "lxml")
     ilanlar = []
@@ -45,42 +36,34 @@ def fetch_nadir_ilanlar():
         })
     return ilanlar
 
-def fetch_diger_site_fiyatlari(ilan):
+def fetch_diger_site_fiyatlari(title):
     """
-    Diğer sitelerde aynı başlıkla arama yapıp fiyat listesini döner.
-    Buraya istediğiniz siteler için scraping veya API entegrasyonu yazabilirsiniz.
-    Örnek stub:
+    Burada benzersiz bir başlık ile diğer sitelerde arama yapıp
+    fiyatları döneceksin. Örnek siteler:
+      - kitapantik.com
+      - ekitap.com
+      - kitapsec.com
+      - dr.com.tr
+    Şuanda stub olarak örnek döndürüyoruz.
     """
-    # TODO: burayı kendi hedef sitelerinizle değiştirin
     return [
-        {"site": "KitapXYZ",  "price": 50, "url": "https://kitapxyz.com/123"},
-        {"site": "OtakKitap", "price": 75, "url": "https://otakkitap.com/456"},
+        {"site": "KitapAntik", "price": 120, "url": "https://kitapantik.com/örnek"},
+        {"site": "EKitap",     "price": 140, "url": "https://ekitap.com/örnek"}
     ]
 
 def main():
-    # 1) Nadirk itap’tan ilanları çek
     try:
         ilanlar = fetch_nadir_ilanlar()
     except Exception as e:
         send_notification("NadirKitap HATA", f"Liste çekilemedi: {e}")
         return
 
-    if not ilanlar:
-        print("🎈 Yeni ilan yok.")
-        return
-
-    # 2) Her ilanın piyasa fiyatını diğer sitelerden al, en ucuzu seç
     for ilan in ilanlar:
-        diger_fiyatlar = fetch_diger_site_fiyatlari(ilan)
-        if not diger_fiyatlar:
-            send_notification(
-                "Fiyat Karşılaştırma HATA",
-                f"{ilan['title']}\nDiğer sitelerden fiyat alınamadı."
-            )
+        diger = fetch_diger_site_fiyatlari(ilan["title"])
+        if not diger:
             continue
 
-        en_ucuz = min(diger_fiyatlar, key=lambda x: x["price"])
-        # 3) Eğer NadirKitap fiyatı (manüel eklemediyseniz stub olduğundan hep bildirim atılacak)
+        en_ucuz = min(diger, key=lambda x: x["price"])
         send_notification(
             "Ucuz Kitap Bulundu!",
             f"{ilan['title']}\n"
