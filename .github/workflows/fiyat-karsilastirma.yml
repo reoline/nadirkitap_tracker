@@ -2,8 +2,8 @@ name: NadirKitap Fiyat Karşılaştırma
 
 on:
   schedule:
-    # Her gün sabah 08:00 ve akşam 20:00 UTC’de çalıştırır.
-    - cron:  "0 8,20 * * *"
+    # Sabah 08:00 ve akşam 20:00 UTC zaman diliminde (GitHub runner saat dilimine dikkat)
+    - cron: '0 8,20 * * *'
   workflow_dispatch:
 
 jobs:
@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.x'
 
       - name: Install dependencies
         run: |
@@ -25,5 +25,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run price comparison
-        run: |
-          python nadirkitap_tracker.py
+        run: python tracker.py
